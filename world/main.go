@@ -3,11 +3,21 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	_ "github.com/go-sql-driver/mysql"
 )
+
+var dbHost = os.Getenv("DB_HOST")
+var dbUser = os.Getenv("DB_USER")
+var dbPass = os.Getenv("DB_PASS")
+var dbName = os.Getenv("DB_NAME")
+var dbSource = dbUser + ":" + dbPass + "@tcp(" + dbHost + ":3306)/" + dbName
 
 // Response is of type APIGatewayProxyResponse since we're leveraging the
 // AWS Lambda Proxy Request functionality (default behavior)
@@ -19,8 +29,27 @@ type Response events.APIGatewayProxyResponse
 func Handler(ctx context.Context) (Response, error) {
 	var buf bytes.Buffer
 
+	cnn, err := sql.Open("mysql", dbSource)
+	if err != nil {
+		return Response{StatusCode: 500}, err
+	}
+	defer cnn.Close()
+
+	id := int(2)
+	val := ""
+
+	err =
+		cnn.QueryRow(
+			"SELECT * FROM test WHERE id = ?", id).Scan(&id, &val)
+	if err != nil {
+		fmt.Println(err)
+		return Response{StatusCode: 500}, err
+	}
+
+	resultMessage := fmt.Sprintf("World Success!! id : %d, val : %s", id, val)
+
 	body, err := json.Marshal(map[string]interface{}{
-		"message": "Okay so your other function also executed successfully!",
+		"message": resultMessage,
 	})
 	if err != nil {
 		return Response{StatusCode: 404}, err
