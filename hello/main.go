@@ -36,19 +36,17 @@ func Handler(ctx context.Context) (Response, error) {
 	defer cnn.Close()
 
 	id := int(1)
-	val := "abc"
+	val := ""
 
 	err =
 		cnn.QueryRow(
-			"SELECT * FROM test WHERE id = ? AND val = ?",
-			id, val).Scan(
-			&id, &val)
+			"SELECT * FROM test WHERE id = ?", id).Scan(&id, &val)
 	if err != nil {
 		fmt.Println(err)
 		return Response{StatusCode: 500}, err
 	}
 
-	resultMessage := fmt.Sprintf("Success!! id : %d, val : %s", id, val)
+	resultMessage := fmt.Sprintf("Hello Success!! id : %d, val : %s", id, val)
 
 	body, err := json.Marshal(map[string]interface{}{
 		"message": resultMessage,
